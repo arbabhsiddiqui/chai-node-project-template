@@ -1,10 +1,9 @@
 import mongoose from "mongoose";
 
-
 const connectDB = async () => {
-    const conn = await mongoose.connect(process.env.MONGODB_URI);
-    //what is inside this conn
-    console.log(`MongoDB connected: ${conn.connection.host}`)
+    const mongoUri = process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/backend-cohort";
+    const conn = await mongoose.connect(mongoUri);
+    console.log(`MongoDB connected: ${conn.connection.host}`);
 }
 
 export default connectDB

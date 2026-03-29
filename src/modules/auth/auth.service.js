@@ -1,3 +1,4 @@
+import crypto from "crypto";
 import ApiError from "../../common/utils/api-error.js";
 import {
   generateAccessToken,
@@ -12,8 +13,11 @@ const hashToken = (token) =>
   crypto.createHash("sha256").update(token).digest("hex");
 
 const register = async ({ name, email, password, role }) => {
+
+  console.log("reach to servie")
+
   const existing = await User.findOne({ email });
-  if (existing) throw ApiError.conflict("Email already exisits");
+  if (existing) throw ApiError.conflict("Email already exists");
 
   const { rawToken, hashedToken } = generateResetToken();
 
@@ -26,9 +30,9 @@ const register = async ({ name, email, password, role }) => {
   });
 
   try {
-    await sendVerificationEmail(email, token);
+    await sendVerificationEmail(email, rawToken);
   } catch (error) {
-    console.error(error);
+    console.error("Email send failed:", error);
   }
 
   const userObj = user.toObject();
@@ -44,12 +48,13 @@ const login = async ({ email, password }) => {
   // check if verified or not
 
   const user = await User.findOne({ email }).select("+password");
-  if (!user) throw ApiError.unauthorized("Invalid Email or password");
+  if (!user) throw ApiError.unauthorized("Invalid email or password");
 
-  // somehow I will check password
+  const isPasswordValid = await user.comparePassword(password);
+  if (!isPasswordValid) throw ApiError.unauthorized("Invalid email or password");
 
   if (!user.isVerified) {
-    throw ApiError.forbidden("Please verify your email before loggin");
+    throw ApiError.forbidden("Please verify your email before logging in");
   }
 
   const accessToken = generateAccessToken({ id: user._id, role: user.role });
@@ -93,15 +98,15 @@ const logout = async (userId) => {
 
 const forgotPassword = async (email) => {
   const user = await User.findOne({ email });
-  if (!user) throw ApiError.notfound("No acccount with that email");
+  if (!user) throw ApiError.notfound("No account with that email");
 
   const { rawToken, hashedToken } = generateResetToken();
   user.resetPasswordtoken = hashedToken;
   user.resetpasswordExpires = Date.now() + 15 * 60 * 1000;
 
-  await user.save();
+  await user.save({ validateBeforeSave: false });
 
-  //TODO: mail bhejna nhi aata
+  // TODO: send password reset email
 };
 
 const verifyEmail = async (token) => {
@@ -110,10 +115,13 @@ const verifyEmail = async (token) => {
     "+verificationToken",
   );
 
-  //if user not found
+  if (!user) {
+    throw ApiError.notfound("Invalid or expired verification token");
+  }
+
   user.isVerified = true;
   user.verificationToken = undefined;
-  await user.save();
+  await user.save({ validateBeforeSave: false });
   return user;
 };
 

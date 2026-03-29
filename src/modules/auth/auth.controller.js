@@ -2,6 +2,8 @@ import * as authService from "./auth.service.js"
 import ApiResponse from "../../common/utils/api-response.js"
 
 const register = async (req, res) => {
+    console.log(req.body)
+
     const user = await authService.register(req.body)
     ApiResponse.created(res, "Registration success", user)
 }
@@ -11,7 +13,7 @@ const login = async (req, res) => {
 
     res.cookie("refreshToken", refreshToken, {
         httpOnly: true,
-        secure: true,
+        secure: process.env.NODE_ENV === "production",
         maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
 
@@ -29,5 +31,9 @@ const getMe = async (req, res) => {
     ApiResponse.ok(res, "User Profile", user);
 };
 
+const verifyEmail = async (req, res) => {
+    const user = await authService.verifyEmail(req.params.token);
+    ApiResponse.ok(res, "Email verified successfully", { email: user.email });
+};
 
-export { register, login, logout, getMe }
+export { register, login, logout, getMe, verifyEmail }

@@ -1,4 +1,7 @@
 import express from "express"
+import cookieParser from "cookie-parser";
+import authRoute from "./modules/auth/auth.routes.js";
+
 
 
 const app = express()

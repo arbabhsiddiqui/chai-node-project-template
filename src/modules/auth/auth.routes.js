@@ -5,7 +5,12 @@ import RegisterDto from "./dto/register.dto.js"
 
 const router = Router()
 
-router.post("/register", validate(RegisterDto), controller.register)
+
+router.post("/register", validate(RegisterDto), controller.register);
+router.post("/login", validate(LoginDto), controller.login);
+router.post("/logout", authenticate, controller.logout);
+router.get("/me", authenticate, controller.getMe);
+router.get("/verify-email/:token", controller.getMe);
 
 
 export default router

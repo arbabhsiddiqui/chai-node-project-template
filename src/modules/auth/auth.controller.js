@@ -36,4 +36,26 @@ const verifyEmail = async (req, res) => {
     ApiResponse.ok(res, "Email verified successfully", { email: user.email });
 };
 
-export { register, login, logout, getMe, verifyEmail }
+
+const forgotPassword = async (req, res) => {
+    await authService.forgotPassword(req.body.email)
+    ApiResponse.ok(res, "ChangePassword url send to email", {})
+}
+
+const resetPassword = async (req, res) => {
+    await authService.resetPassword(req.body)
+    ApiResponse.ok(res, "Successfully reset", {})
+}
+
+
+const changePassword = async (req, res) => {
+    const { oldPassword, newPassword } = req.body;
+    const email = req.user.email;
+    await authService.changePassword({ oldPassword, newPassword, email })
+    ApiResponse.ok(res, "Successfully changed", {})
+}
+
+
+
+
+export { register, login, logout, getMe, verifyEmail, forgotPassword, resetPassword, changePassword }

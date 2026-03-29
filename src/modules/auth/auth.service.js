@@ -29,6 +29,8 @@ const register = async ({ name, email, password, role }) => {
     verificationToken: hashedToken,
   });
 
+  console.log("for testing verfiy email without email", rawToken)
+
   try {
     await sendVerificationEmail(email, rawToken);
   } catch (error) {
@@ -97,16 +99,37 @@ const logout = async (userId) => {
 };
 
 const forgotPassword = async (email) => {
+  console.log("email", email)
   const user = await User.findOne({ email });
   if (!user) throw ApiError.notfound("No account with that email");
 
   const { rawToken, hashedToken } = generateResetToken();
+  console.log("clled")
   user.resetPasswordtoken = hashedToken;
   user.resetpasswordExpires = Date.now() + 15 * 60 * 1000;
 
   await user.save({ validateBeforeSave: false });
 
+  console.log("for testing forgot password flow without email", rawToken)
+  return true
   // TODO: send password reset email
+};
+
+
+const resetPassword = async ({ password, token }) => {
+  const hashedToken = hashToken(token);
+  const user = await User.findOne({ resetPasswordtoken: hashedToken }).select(
+    "+resetPasswordtoken",
+  );
+
+  if (!user) {
+    throw ApiError.notfound("Invalid or expired verification token");
+  }
+
+  user.resetPasswordtoken = undefined;
+  user.password = password;
+  await user.save({ validateBeforeSave: false });
+  return user;
 };
 
 const verifyEmail = async (token) => {
@@ -131,4 +154,18 @@ const getMe = async (userId) => {
   return user;
 };
 
-export { register, login, refresh, logout, forgotPassword, getMe, verifyEmail };
+const changePassword = async ({ email, oldPassword, newPassword }) => {
+
+  const user = await User.findOne({ email }).select("+password");
+  if (!user) throw ApiError.unauthorized("Invalid email or password");
+
+  const isPasswordValid = await user.comparePassword(oldPassword);
+  if (!isPasswordValid) throw ApiError.unauthorized("Invalid email or password");
+
+  user.password = newPassword;
+  await user.save({ validateBeforeSave: false });
+  delete user.password;
+  return user
+}
+
+export { register, login, refresh, logout, forgotPassword, getMe, verifyEmail, resetPassword, changePassword };

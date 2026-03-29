@@ -1,8 +1,8 @@
 import nodemailer from "nodemailer";
 
 const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST || "smtp.example.com",
-    port: process.env.SMTP_PORT ? Number(process.env.SMTP_PORT) : 587,
+    host: process.env.SMTP_HOST,
+    port: process.env.SMTP_PORT,
     secure: false,
     auth: {
         user: process.env.SMTP_USER,
@@ -12,7 +12,7 @@ const transporter = nodemailer.createTransport({
 
 const sendMail = async (to, subject, html) => {
     await transporter.sendMail({
-        from: process.env.SMTP_FROM_EMAIL || "no-reply@example.com",
+        from: process.env.SMTP_FROM_EMAIL,
         to,
         subject,
         html,
@@ -20,7 +20,7 @@ const sendMail = async (to, subject, html) => {
 };
 
 const sendVerificationEmail = async (to, token) => {
-    const baseUrl = process.env.BASE_URL || `http://localhost:${process.env.PORT || 5000}`;
+    const baseUrl = process.env.BASE_URL;
     const verificationUrl = `${baseUrl}/api/auth/verify-email/${token}`;
     const html = `
         <p>Please verify your email by clicking the link below:</p>
